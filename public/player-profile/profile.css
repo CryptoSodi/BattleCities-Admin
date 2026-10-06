@@ -1,0 +1,44 @@
+.profile-shell { padding-bottom: 56px; }
+.profile-header { margin-bottom: 16px; }
+.profile-state { min-height: 360px; text-align: center; }
+.profile-state > p { color: var(--admin-muted); font: 700 10px/1.6 "Press Start 2P", monospace; text-transform: uppercase; }
+.profile-error { display: block; padding: 42px; }
+.profile-error h1 { color: var(--admin-red); margin: 12px 0; }
+.profile-error p:not(.admin-kicker) { color: var(--admin-muted); margin: 0 auto 28px; max-width: 560px; }
+.profile-content { min-height: calc(100vh - 160px); }
+.profile-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 22px; align-items: center; padding: 18px; border: 1px solid var(--admin-line); background: #080b0c; }
+.profile-avatar { display: grid; width: 92px; height: 92px; overflow: hidden; place-items: center; color: var(--admin-amber); border: 2px solid var(--admin-amber); background: var(--admin-panel-2); font: 700 30px/1 "Press Start 2P", monospace; }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-identity h2 { color: var(--admin-green); font-size: clamp(20px, 3vw, 32px); }
+.profile-meta { display: flex; flex-wrap: wrap; gap: 10px; color: var(--admin-muted); font: 700 10px/1.6 "Press Start 2P", monospace; text-transform: uppercase; }
+.profile-meta__divider { width: 4px; height: 4px; margin-top: 6px; background: var(--admin-amber); }
+.profile-id { margin: 10px 0 0; overflow-wrap: anywhere; color: var(--admin-muted); font: 700 10px/1.5 "Press Start 2P", monospace; }
+.profile-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 14px; }
+.profile-stat { min-height: 124px; }
+.profile-stat--rank { border-left-color: var(--admin-amber); }
+.profile-stat strong { color: var(--admin-green); }
+.profile-stat--rank strong { color: var(--admin-amber); }
+.profile-stat em { display: block; color: var(--admin-muted); font: 700 8px/1.4 "Press Start 2P", monospace; font-style: normal; text-align: right; text-transform: uppercase; }
+.profile-records { margin-top: 24px; }
+.profile-pagination { display: flex; align-items: center; justify-content: flex-end; gap: 12px; margin-top: 14px; }
+.profile-pagination__status { min-width: 112px; color: var(--admin-muted); font: 700 8px/1.5 "Press Start 2P", monospace; text-align: center; text-transform: uppercase; }
+.profile-panel__count { color: var(--admin-muted); font: 700 9px/1.4 "Press Start 2P", monospace; text-transform: uppercase; }
+.profile-table { min-width: 720px; }
+.profile-match__result { color: var(--admin-red); font-family: "Press Start 2P", monospace; text-transform: uppercase; }
+.profile-match--won .profile-match__result { color: var(--admin-green); }
+.profile-table .admin-button:disabled { color: #6b7a7f; border-color: var(--admin-line); background: transparent; cursor: not-allowed; }
+.profile-empty { margin: 0; padding: 24px; color: var(--admin-muted); font: 700 9px/1.5 "Press Start 2P", monospace; text-align: center; text-transform: uppercase; }
+@media (max-width: 900px) {
+  .profile-hero { grid-template-columns: auto minmax(0, 1fr); }
+  .profile-hero > .admin-button { grid-column: 1 / -1; width: 100%; }
+  .profile-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .profile-shell { padding-bottom: 24px; }
+  .profile-content, .profile-error { padding: 16px; }
+  .profile-hero { grid-template-columns: 1fr; }
+  .profile-avatar { width: 78px; height: 78px; }
+  .profile-stats { grid-template-columns: 1fr; }
+  .profile-pagination { align-items: stretch; flex-direction: column; }
+  .profile-pagination .admin-button { width: 100%; }
+}

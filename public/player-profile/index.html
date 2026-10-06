@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#080a07" />
+    <title>Player Profile | Battle Cities</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="referrer" content="no-referrer" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Press+Start+2P&family=Share+Tech+Mono&display=swap" />
+    <link rel="icon" type="image/png" href="/data/graphics/favicon.png" />
+    <link rel="stylesheet" href="/admin/admin.css" />
+    <link rel="stylesheet" href="/player-profile/profile.css" />
+    <script defer src="/player-profile.js"></script>
+  </head>
+  <body class="admin-body profile-body">
+    <main class="admin-shell profile-shell">
+      <header class="admin-header profile-header">
+        <div>
+          <p class="admin-kicker">Battle Cities / Player Directory</p>
+          <h1>Player Profile</h1>
+        </div>
+        <a class="admin-button admin-button--back" href="/">Back to Admin</a>
+      </header>
+
+      <section class="admin-section profile-state" data-profile-loading role="status">
+        <span class="admin-loader" aria-hidden="true"></span>
+        <p>Loading combat record...</p>
+      </section>
+
+      <section class="admin-section profile-state profile-error" data-profile-error hidden>
+        <p class="admin-kicker">Combat record unavailable</p>
+        <h1 data-profile-error-title>Player not found</h1>
+        <p data-profile-error-copy>
+          This profile may have been removed or the address may be incorrect.
+        </p>
+        <a class="admin-button admin-button--primary" href="/"
+          >Return to Admin</a
+        >
+      </section>
+
+      <div class="admin-section profile-content" data-profile-content hidden>
+        <section class="profile-hero" aria-labelledby="profile-name">
+          <div class="profile-avatar" data-profile-avatar aria-hidden="true">
+            <img data-profile-avatar-image alt="" hidden />
+            <span data-profile-avatar-fallback>BC</span>
+          </div>
+          <div class="profile-identity">
+            <p class="admin-kicker">Player combat record</p>
+            <h2 id="profile-name" data-profile-name>Player</h2>
+            <div class="profile-meta">
+              <span data-profile-provider>Player</span>
+              <span class="profile-meta__divider" aria-hidden="true"></span>
+              <span>Joined <time data-profile-joined></time></span>
+            </div>
+            <p class="profile-id" data-profile-id></p>
+          </div>
+          <button
+            class="admin-button admin-button--secondary"
+            data-profile-copy
+            type="button"
+          >
+            Share profile
+          </button>
+        </section>
+
+        <section class="admin-metrics profile-stats" aria-label="Player statistics">
+          <article class="admin-metric profile-stat profile-stat--rank">
+            <span>Season rank</span>
+            <strong data-season-rank
+              >Unranked</strong
+            >
+            <em data-season-name
+              >Current season</em
+            >
+          </article>
+          <article class="admin-metric profile-stat">
+            <span>Game points</span>
+            <strong data-total-points>0</strong>
+            <em>All time</em>
+          </article>
+          <article class="admin-metric profile-stat">
+            <span>Matches</span>
+            <strong data-total-matches>0</strong>
+            <em>Recorded runs</em>
+          </article>
+          <article class="admin-metric profile-stat">
+            <span>Best score</span>
+            <strong data-best-score>0</strong>
+            <em>Primary mode</em>
+          </article>
+        </section>
+
+        <section class="profile-records" aria-labelledby="history-title">
+          <div class="admin-section__title">
+            <div>
+              <p class="admin-kicker">Battle log</p>
+              <h2 id="history-title">Recent matches</h2>
+            </div>
+            <span class="profile-panel__count" data-match-count>0 records</span>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="profile-table">
+              <thead>
+                <tr><th>Result</th><th>Score</th><th>Level</th><th>Played</th><th>Replay</th></tr>
+              </thead>
+              <tbody data-profile-history></tbody>
+            </table>
+          </div>
+          <nav class="profile-pagination" data-profile-pagination hidden aria-label="Match pages">
+            <button class="admin-button admin-button--secondary" data-profile-previous type="button">
+              Previous
+            </button>
+            <span class="profile-pagination__status" data-profile-page-status></span>
+            <button class="admin-button admin-button--secondary" data-profile-next type="button">
+              Next
+            </button>
+          </nav>
+          <p class="profile-empty" data-profile-empty hidden>
+            No verified combat records yet.
+          </p>
+        </section>
+      </div>
+    </main>
+  </body>
+</html>
