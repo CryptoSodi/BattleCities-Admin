@@ -10,8 +10,8 @@
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https://api.battlecities.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data:; object-src 'none'; base-uri 'self'; form-action 'self' https://api.battlecities.com" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Press+Start+2P&family=Share+Tech+Mono&display=swap" />
-    <link rel="stylesheet" href="/admin/admin.css" />
-    <script defer src="/admin.js?v=0.1.0"></script>
+    <link rel="stylesheet" href="/admin/admin.css?v=0.2.0" />
+    <script defer src="/admin.js?v=0.2.0"></script>
   </head>
   <body class="admin-body">
     <main class="admin-shell">
@@ -57,6 +57,8 @@
           <button class="admin-tab" data-admin-tab="players" type="button">Players</button>
           <button class="admin-tab" data-admin-tab="notifications" type="button">Notifications</button>
           <button class="admin-tab" data-admin-tab="x" type="button">X</button>
+          <button class="admin-tab" data-admin-tab="competitions" type="button">Competitions</button>
+          <button class="admin-tab" data-admin-tab="reviews" type="button">Reviews</button>
         </nav>
 
 
@@ -135,6 +137,77 @@
           <div class="admin-pagination" data-x-pagination></div>
         </section>
 
+        <section class="admin-section" data-admin-section="competitions" hidden>
+          <div class="admin-section__title"><div><p class="admin-kicker">Sales &amp; prize policy</p><h2>Competitions</h2></div><button class="admin-button admin-button--secondary" data-competition-reload type="button">Reload settings</button></div>
+          <p class="admin-panel-status" data-competition-status role="status">Open this tab to load server settings.</p>
+          <aside class="admin-card admin-readiness" aria-label="API runtime readiness">
+            <div data-competition-runtime>Not loaded. Policy switches do not start server workers.</div>
+          </aside>
+          <form data-competition-form>
+            <fieldset data-competition-fields disabled>
+              <div class="admin-policy-grid">
+                <article class="admin-card">
+                  <p class="admin-kicker">Season entry</p><h3>Season pass sales</h3>
+                  <p class="admin-help">A pass includes eligible matches from the start of that season and expires at its end. Enter both prices before enabling sales.</p>
+                  <label class="admin-check"><input data-pass-enabled type="checkbox" /> Enable season pass sales</label>
+                  <div class="admin-form__grid">
+                    <label>SKR price<input data-pass-skr type="text" inputmode="decimal" autocomplete="off" placeholder="Not set" maxlength="22" /></label>
+                    <label>SOL price<input data-pass-sol type="text" inputmode="decimal" autocomplete="off" placeholder="Not set" maxlength="22" /></label>
+                  </div>
+                </article>
+                <article class="admin-card" data-prize-policy="cycle">
+                  <p class="admin-kicker">30-minute cycle / ranks 1–10</p><h3>Cycle prizes</h3>
+                  <label class="admin-check"><input data-policy-enabled type="checkbox" /> Enable cycle prize policy</label>
+                  <p class="admin-help">The amount is SKR per player in the rank range.</p>
+                  <div class="admin-tier-list" data-prize-tiers></div>
+                  <button class="admin-button admin-button--quiet" data-add-tier type="button">Add prize tier</button>
+                  <p class="admin-help" data-prize-budget></p>
+                </article>
+                <article class="admin-card" data-prize-policy="season">
+                  <p class="admin-kicker">Gaming season / ranks 1–100</p><h3>Season prizes</h3>
+                  <label class="admin-check"><input data-policy-enabled type="checkbox" /> Enable season prize policy</label>
+                  <p class="admin-help">Ranks must not overlap. Gaps receive no configured prize.</p>
+                  <div class="admin-tier-list" data-prize-tiers></div>
+                  <button class="admin-button admin-button--quiet" data-add-tier type="button">Add prize tier</button>
+                  <p class="admin-help" data-prize-budget></p>
+                </article>
+              </div>
+              <details class="admin-card admin-shop-settings">
+                <summary>Shop SKR prices</summary>
+                <p class="admin-help">Empty prices disable an item's SKR option. SOL prices are not changed here. Unlisted prices are preserved.</p>
+                <div class="admin-shop-prices" data-shop-prices></div>
+                <p class="admin-help" data-shop-status></p>
+              </details>
+              <p class="admin-help" data-trading-policy></p>
+              <p class="admin-help">Closed competitions keep their original allocations. Only approved match results authorize gaming prizes. Saving a policy does not approve results or transfer tokens.</p>
+              <div class="admin-form-actions"><button class="admin-button admin-button--primary" data-competition-save type="submit">Save settings</button></div>
+            </fieldset>
+          </form>
+        </section>
+
+        <section class="admin-section" data-admin-section="reviews" hidden>
+          <div class="admin-section__title"><div><p class="admin-kicker">Manual prize approval</p><h2>Match reviews</h2></div><button class="admin-button admin-button--secondary" data-review-refresh type="button">Refresh queue</button></div>
+          <p class="admin-help">Review trusted evidence before deciding. Match metadata alone is not proof. Decisions are final and audited; no automatic approval or token transfer occurs here.</p>
+          <p class="admin-panel-status" data-review-status role="status">Open this tab to load the review queue.</p>
+          <div class="admin-table-wrap"><table><thead><tr><th>Match / date</th><th>Player / season</th><th>Score / points</th><th>Stage / result</th><th>Validation</th><th>Review</th></tr></thead><tbody data-review-rows></tbody></table></div>
+          <div class="admin-pagination"><button class="admin-button admin-button--quiet" data-review-first type="button" disabled>Newest</button><span data-review-page></span><button class="admin-button admin-button--quiet" data-review-next type="button" disabled>Older matches</button></div>
+          <dialog class="admin-review-dialog" data-review-dialog aria-labelledby="review-title">
+            <form data-review-form>
+              <div class="admin-section__title"><h2 id="review-title">Review match evidence</h2><button class="admin-button admin-button--back" data-review-close type="button">Cancel</button></div>
+              <dl class="admin-evidence" data-review-evidence></dl>
+              <button class="admin-button admin-button--replay" data-review-replay type="button">Open saved replay</button>
+              <p class="admin-help" data-review-replay-note></p>
+              <fieldset data-review-fields>
+                <label class="admin-check"><input data-review-inspected type="checkbox" required /> I inspected trusted evidence, not just the submitted score.</label>
+                <label>Final decision<select data-review-decision required><option value="">Choose a decision</option><option value="accepted">Accept for prizes</option><option value="rejected">Reject for prizes</option></select></label>
+                <label>Evidence and reason<textarea data-review-reason required minlength="5" maxlength="1000" rows="4" placeholder="Describe the evidence checked and why this result is valid or invalid."></textarea></label>
+                <label class="admin-check"><input data-review-final type="checkbox" required /> I understand this decision is final and audited.</label>
+                <button class="admin-button admin-button--danger" data-review-submit type="submit">Record final decision</button>
+              </fieldset>
+              <p class="admin-panel-status" data-review-dialog-status role="status"></p>
+            </form>
+          </dialog>
+        </section>
       </div>
     </main>
   </body>

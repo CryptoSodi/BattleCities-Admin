@@ -3,8 +3,12 @@
 import { getPhantomProvider } from '../wallet/PhantomProvider';
 import { GAME_ORIGIN } from '../network/api';
 import { AdminClient, AdminRequestError } from './AdminClient';
+import { CompetitionPanel } from './CompetitionPanel';
+import { ReviewPanel } from './ReviewPanel';
 
 const client = new AdminClient();
+let competitionPanel: CompetitionPanel;
+let reviewPanel: ReviewPanel;
 let matchOffset = 0;
 let playerOffset = 0;
 let xOffset = 0;
@@ -56,6 +60,9 @@ async function loginWallet(): Promise<void> {
 }
 
 function bindEvents(): void {
+  competitionPanel = new CompetitionPanel(client, requireElement('[data-admin-section="competitions"]'));
+  reviewPanel = new ReviewPanel(client, requireElement('[data-admin-section="reviews"]'),
+    (id, button) => openSinglePlayerReplay({ id }, button));
   requireElement<HTMLButtonElement>('[data-admin-wallet-login]').addEventListener('click', () => void loginWallet());
   document.querySelectorAll<HTMLButtonElement>('[data-admin-tab]').forEach((tab) => {
     tab.addEventListener('click', () => void selectTab(tab.dataset.adminTab || 'overview'));
@@ -121,6 +128,8 @@ async function loadSection(name: string): Promise<void> {
   else if (name === 'players') await loadPlayers();
   else if (name === 'notifications') await loadNotifications();
   else if (name === 'x') await loadX();
+  else if (name === 'competitions') await competitionPanel.load();
+  else if (name === 'reviews') await reviewPanel.load();
   else await loadOverview();
 }
 

@@ -7,6 +7,21 @@ export class AdminRequestError extends Error {
 }
 
 export class AdminClient {
+  getCompetitions(): Promise<any> { return this.request('/api/admin/competitions'); }
+  saveCompetitions(settings: unknown): Promise<any> {
+    return this.request('/api/admin/competitions', { method: 'PUT', body: JSON.stringify({ settings }) });
+  }
+  getEconomyCatalog(): Promise<any> { return this.request('/api/economy/catalog'); }
+  getMatchReviews(before: string | null = null): Promise<any> {
+    const query = new URLSearchParams({ limit: '50' });
+    if (before) query.set('before', before);
+    return this.request(`/api/admin/match-reviews?${query}`);
+  }
+  reviewMatch(resultId: string, decision: 'accepted' | 'rejected', reason: string): Promise<any> {
+    return this.request('/api/admin/match-reviews', {
+      method: 'POST', body: JSON.stringify({ resultId, decision, reason }),
+    });
+  }
   getWalletChallenge(walletAddress: string): Promise<any> {
     return this.request('/api/session', { method: 'PUT', body: JSON.stringify({ walletAddress }) });
   }
