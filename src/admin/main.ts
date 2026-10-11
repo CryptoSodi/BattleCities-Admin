@@ -141,6 +141,8 @@ async function loadNotifications(): Promise<void> {
     ]);
     const configured = result.configured === true;
     setText('[data-notification-device-count]', formatNumber(Number(result.enabledDevices || 0)));
+    setText('[data-notification-package]', result.androidPackage || 'Unavailable — update the API');
+    setText('[data-notification-project]', result.firebaseProjectId || 'Unavailable — update the API');
     setText('[data-notification-config]', configured ? 'Ready' : 'Not configured');
     requireElement('[data-notification-config]').classList.toggle('admin-status--ready', configured);
     populateNotificationPlayers(players.items || []);
