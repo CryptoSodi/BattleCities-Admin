@@ -7,6 +7,7 @@ Standalone Command Center at https://admin.battlecities.com.
 - Wallet login signs a server challenge. No wallet keys, API secrets, or balances are stored in this repository.
 - Authorized wallets are controlled by the API, not by this public frontend.
 - Profiles, matches, replay sessions, notifications, live-user controls, and X campaign controls are preserved.
+- Android push targets `com.battlecities.game` in Firebase project `battle-cities-84acd`. The Notifications panel displays the deployed API's target package and Firebase project; the API owns delivery configuration.
 - Competitions: season pass SKR/SOL prices, cycle rank 1–10 and season rank 1–100 SKR tiers, optional shop SKR prices, and API-reported runtime readiness. Prices stay exact decimal strings. Blank shop prices disable SKR purchasing for that item.
 - Match reviews: cursor-paged queue, saved replay access, evidence/reason, and explicit confirmation before an irreversible, audited accept/reject decision.
 
