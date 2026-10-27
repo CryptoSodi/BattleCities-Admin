@@ -25,6 +25,15 @@ export class CompetitionPanel {
     }
     root.addEventListener('input', () => this.changed());
     root.addEventListener('change', () => this.changed());
+    element<HTMLInputElement>(root, '[data-token-pricing-auto]').addEventListener('change', () => {
+      if(!this.base)return;
+      const auto=element<HTMLInputElement>(root,'[data-token-pricing-auto]').checked;
+      for(const input of root.querySelectorAll<HTMLInputElement>('[data-shop-price]')) {
+        input.value=(auto?this.base.shopSkrOverrides:this.base.shopSkrPrices)?.[input.dataset.shopPrice!]??'';
+        input.placeholder=auto?'Automatic':'Disabled';
+        if(input.parentElement?.firstChild)input.parentElement.firstChild.textContent=auto?'SKR override':'SKR fixed price';
+      }
+    });
   }
   private changed(): void {
     if (!this.base || this.busy) return;
@@ -62,6 +71,8 @@ export class CompetitionPanel {
     return value;
   }
   private render(value: CompetitionSettings, items?: any[]): void {
+    const automatic=value.tokenPricingMode==='sol-discounted';
+    element<HTMLInputElement>(this.root,'[data-token-pricing-auto]').checked=automatic;
     element<HTMLInputElement>(this.root, '[data-pass-enabled]').checked = value.seasonPass.enabled;
     element<HTMLInputElement>(this.root, '[data-pass-skr]').value = value.seasonPass.skrPrice ?? '';
     element<HTMLInputElement>(this.root, '[data-pass-sol]').value = value.seasonPass.solPrice ?? '';
@@ -75,13 +86,19 @@ export class CompetitionPanel {
       const grid = element(this.root, '[data-shop-prices]'); grid.replaceChildren();
       const ids = new Set([...items.map(item => String(item.id)), ...Object.keys(value.shopSkrPrices)]);
       for (const id of ids) {
-        const label = document.createElement('label'); label.textContent = id.replace(/-/g, ' ');
-        const input = document.createElement('input'); input.type = 'text'; input.inputMode = 'decimal'; input.maxLength = 22;
-        input.dataset.shopPrice = id; input.value = value.shopSkrPrices[id] ?? ''; input.placeholder = 'Disabled';
-        label.append(input); grid.append(label);
+        const card=document.createElement('fieldset');card.className='admin-shop-price-item';const title=document.createElement('legend');title.textContent=id.replace(/-/g,' ');card.append(title);
+        for(const [currency,data,prices] of [['SOL','shopSolPrice',value.shopSolPrices],['SKR','shopPrice',automatic?value.shopSkrOverrides:value.shopSkrPrices],['PLAY','shopPlayPrice',value.shopPlayPrices]] as const){
+          const label=document.createElement('label');label.textContent=currency+(currency==='SOL'?' base':automatic?' override':'');
+          const input=document.createElement('input');input.type='text';input.inputMode='decimal';input.maxLength=22;
+          input.dataset[data]=id;input.value=prices?.[id]??'';input.placeholder=currency==='SOL'?'Disabled':currency==='PLAY'||automatic?'Automatic':'Disabled';
+          label.append(input);card.append(label);
+        }
+        const current=items.find(item=>item.id===id);if(current){const note=document.createElement('small');note.textContent=`Live: ${current.solPrice??'—'} SOL · ${current.skrPrice??'—'} SKR · ${current.playPrice??'—'} PLAY`;card.append(note);}
+        grid.append(card);
       }
     } else {
-      for (const input of this.root.querySelectorAll<HTMLInputElement>('[data-shop-price]')) input.value = value.shopSkrPrices[input.dataset.shopPrice!] ?? '';
+      for(const [selector,field,key] of [['[data-shop-price]',automatic?value.shopSkrOverrides:value.shopSkrPrices,'shopPrice'],['[data-shop-sol-price]',value.shopSolPrices,'shopSolPrice'],['[data-shop-play-price]',value.shopPlayPrices,'shopPlayPrice']] as const)
+        for(const input of this.root.querySelectorAll<HTMLInputElement>(selector))input.value=field?.[input.dataset[key]!]??'';
     }
     element(this.root, '[data-trading-policy]').textContent = `Trading season: ${value.tradingSeason.enabled ? 'enabled' : 'disabled'}, ${value.tradingSeason.prizes.length} tiers. Preserved unchanged by this editor.`;
     this.budgets();
@@ -136,13 +153,16 @@ export class CompetitionPanel {
     if (!this.base || this.busy) return;
     try {
       const shop = Object.fromEntries([...this.root.querySelectorAll<HTMLInputElement>('[data-shop-price]')].map(input => [input.dataset.shopPrice!, input.value]));
+      const sol=Object.fromEntries([...this.root.querySelectorAll<HTMLInputElement>('[data-shop-sol-price]')].map(input=>[input.dataset.shopSolPrice!,input.value]));
+      const play=Object.fromEntries([...this.root.querySelectorAll<HTMLInputElement>('[data-shop-play-price]')].map(input=>[input.dataset.shopPlayPrice!,input.value]));
       const draft = settingsWithEdits(this.base, {
         passEnabled: element<HTMLInputElement>(this.root, '[data-pass-enabled]').checked,
         skrPrice: element<HTMLInputElement>(this.root, '[data-pass-skr]').value,
         solPrice: element<HTMLInputElement>(this.root, '[data-pass-sol]').value,
         cycleEnabled: element<HTMLInputElement>(this.root, '[data-prize-policy="cycle"] [data-policy-enabled]').checked,
         seasonEnabled: element<HTMLInputElement>(this.root, '[data-prize-policy="season"] [data-policy-enabled]').checked,
-        cycle: this.tiers('cycle'), season: this.tiers('season'), shop,
+        cycle: this.tiers('cycle'), season: this.tiers('season'), shop,sol,play,
+        automaticTokens:element<HTMLInputElement>(this.root,'[data-token-pricing-auto]').checked,
       }, this.decimals);
       if (!window.confirm('Save these prices and policy flags? Enabling a policy can affect purchases or future allocations. This does not start workers or send payouts.')) return;
       this.busy = true; this.fields.disabled = true; status(this.message, 'Checking for concurrent changes…');
@@ -150,7 +170,10 @@ export class CompetitionPanel {
       if (settingsFingerprint(latest.settings) !== settingsFingerprint(this.base)) throw new Error('Server settings changed. Reload and reapply your edits before saving.');
       status(this.message, 'Saving settings…');
       const response = await this.client.saveCompetitions(draft);
-      this.base = this.settings(response.settings); this.render(this.base); this.dirty = false;
+      this.base = this.settings(response.settings); this.dirty = false;
+      let freshItems:any[]|undefined;
+      try {const catalog=await this.client.getEconomyCatalog();freshItems=Array.isArray(catalog.items)?catalog.items:undefined;}catch{/* Saving succeeded even if refreshing prices is unavailable. */}
+      this.render(this.base,freshItems);
       if (response.runtime) this.runtime(response.runtime);
       status(this.message, 'Settings saved. Worker and delivery switches were not changed.');
     } catch (error) { status(this.message, `Save not confirmed: ${errorText(error)}. Reload to check server state before retrying.`, true); }

@@ -65,12 +65,27 @@ test('admin API envelopes, encoded cursor, and session credentials', async () =>
     for (const call of calls) assert.equal(call.init.credentials,'include');
   } finally {globalThis.fetch = original;}
 });
+
+test('SOL base and token overrides remain exact, clear back to automatic, and preserve unrelated policy',()=>{
+  const automatic={...base,tokenPricingMode:'sol-discounted',shopSolPrices:{shield:'0.02'},shopSkrOverrides:{shield:'300'},shopPlayPrices:{shield:'400'}};
+  const result=model.settingsWithEdits(automatic,{...edits,automaticTokens:true,shop:{shield:''},sol:{shield:'0.012345678'},play:{shield:'123.456789'}},6);
+  assert.equal(result.shopSolPrices.shield,'0.012345678');
+  assert.equal(result.shopSkrOverrides.shield,undefined);
+  assert.equal(result.shopPlayPrices.shield,'123.456789');
+  assert.equal(result.tokenPricingMode,'sol-discounted');
+  assert.deepEqual(result.tradingSeason,base.tradingSeason);
+  assert.equal(automatic.shopSkrOverrides.shield,'300');
+  const reset=model.settingsWithEdits(result,{...edits,automaticTokens:true,play:{shield:''}},6);
+  assert.equal(reset.shopPlayPrices.shield,undefined);
+  assert.throws(()=>model.settingsWithEdits(automatic,{...edits,sol:{shield:'0.0000000001'}},6));
+  assert.throws(()=>model.settingsWithEdits(automatic,{...edits,play:{shield:'0.0000001'}},6));
+});
 test('panel controls exist and settings/review actions require explicit confirmation', async () => {
   const html = await readFile('public/index.html','utf8');
   for (const file of ['src/admin/CompetitionPanel.ts','src/admin/ReviewPanel.ts']) {
     const source = await readFile(file,'utf8');
     for (const match of source.matchAll(/\[(data-[\w-]+)(?:\]|=)/g)) {
-      if (!['data-tier-field','data-shop-price'].includes(match[1])) assert.ok(html.includes(match[1]),`${file}: ${match[1]}`);
+      if (!['data-tier-field','data-shop-price','data-shop-sol-price','data-shop-play-price'].includes(match[1])) assert.ok(html.includes(match[1]),`${file}: ${match[1]}`);
     }
     assert.ok(source.includes('window.confirm('));
   }

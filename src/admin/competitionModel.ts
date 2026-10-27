@@ -6,6 +6,10 @@ export type CompetitionSettings = {
   season: Policy;
   tradingSeason: Policy;
   shopSkrPrices: Record<string, string | null>;
+  shopSolPrices?: Record<string, string | null>;
+  shopPlayPrices?: Record<string, string | null>;
+  shopSkrOverrides?: Record<string, string | null>;
+  tokenPricingMode?: 'fixed' | 'sol-discounted';
   [key: string]: unknown;
 };
 export type DraftTier = { fromRank: string; toRank: string; amount: string };
@@ -46,13 +50,14 @@ export function validateTiers(rows: DraftTier[], maxRank: number, decimals = 9):
 export function settingsWithEdits(base: CompetitionSettings, edits: {
   passEnabled: boolean; skrPrice: string; solPrice: string;
   cycleEnabled: boolean; cycle: DraftTier[]; seasonEnabled: boolean; season: DraftTier[];
-  shop: Record<string, string>;
+  shop: Record<string, string>; sol?: Record<string, string>; play?: Record<string, string>; automaticTokens?: boolean;
 }, decimals = 9): CompetitionSettings {
   // PUT replaces the whole document. Keep policies not presented in this editor.
   const result: CompetitionSettings = JSON.parse(JSON.stringify(base));
   result.seasonPass = { enabled: edits.passEnabled,
     skrPrice: money(edits.skrPrice, decimals, true), solPrice: money(edits.solPrice, 9, true) };
-  if (edits.passEnabled && (!result.seasonPass.skrPrice || !result.seasonPass.solPrice)) {
+  const autoTokens=edits.automaticTokens ?? base.tokenPricingMode==='sol-discounted';
+  if (edits.passEnabled && ((!autoTokens&&!result.seasonPass.skrPrice) || !result.seasonPass.solPrice)) {
     throw new Error('Both SKR and SOL pass prices are required before enabling sales.');
   }
   result.cycle = { enabled: edits.cycleEnabled, prizes: validateTiers(edits.cycle, 10, decimals) };
@@ -61,7 +66,19 @@ export function settingsWithEdits(base: CompetitionSettings, edits: {
     if (result[name].enabled && !result[name].prizes.length) throw new Error(`Add ${name} prize tiers before enabling prizes.`);
   }
   result.shopSkrPrices = { ...base.shopSkrPrices };
-  for (const [id, value] of Object.entries(edits.shop)) result.shopSkrPrices[id] = money(value, decimals, true);
+  result.shopSolPrices = { ...base.shopSolPrices };
+  result.shopPlayPrices = { ...base.shopPlayPrices };
+  result.shopSkrOverrides = { ...base.shopSkrOverrides };
+  result.tokenPricingMode = edits.automaticTokens === undefined ? base.tokenPricingMode ?? 'fixed' : edits.automaticTokens ? 'sol-discounted' : 'fixed';
+  for (const [id, value] of Object.entries(edits.shop)) {
+    if (result.tokenPricingMode === 'sol-discounted') {
+      if(value.trim()==='')delete result.shopSkrOverrides[id];else result.shopSkrOverrides[id]=money(value,decimals)!;
+    } else result.shopSkrPrices[id] = money(value, decimals, true);
+  }
+  for (const [id, value] of Object.entries(edits.sol || {})) result.shopSolPrices[id] = money(value, 9, true);
+  for (const [id, value] of Object.entries(edits.play || {})) {
+    if(value.trim()==='')delete result.shopPlayPrices[id];else result.shopPlayPrices[id]=money(value,6)!;
+  }
   return result;
 }
 

@@ -174,8 +174,9 @@
                 </article>
               </div>
               <details class="admin-card admin-shop-settings">
-                <summary>Shop SKR prices</summary>
-                <p class="admin-help">Empty prices disable an item's SKR option. SOL prices are not changed here. Unlisted prices are preserved.</p>
+                <summary>Shop prices · SOL / SKR / PLAY</summary>
+                <label class="admin-check"><input type="checkbox" data-token-pricing-auto> Derive SKR and PLAY from SOL with a 20% discount</label>
+                <p class="admin-help">Edit each item's SOL base price. Automatic token prices use one shared server rate snapshot every 10 minutes. Blank SKR/PLAY overrides use the automatic price; an entered override fixes that item's token price. In fixed mode, a blank SKR price disables SKR. Blank SOL disables SOL. Wallet approvals show exact amounts.</p>
                 <div class="admin-shop-prices" data-shop-prices></div>
                 <p class="admin-help" data-shop-status></p>
               </details>

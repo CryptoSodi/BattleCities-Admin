@@ -9,6 +9,7 @@ Standalone Command Center at https://admin.battlecities.com.
 - Profiles, matches, replay sessions, notifications, live-user controls, and X campaign controls are preserved.
 - Android push targets `sol.battle.cities` in Firebase project `battle-cities-84acd`. The Notifications panel displays the deployed API's target package and Firebase project; the API owns delivery configuration.
 - Competitions: season pass SKR/SOL prices, cycle rank 1–10 and season rank 1–100 SKR tiers, optional shop SKR prices, and API-reported runtime readiness. Prices stay exact decimal strings. Blank shop prices disable SKR purchasing for that item.
+- Shop pricing: per-item SOL bases and optional SKR/PLAY overrides. Automatic mode gives both tokens a 20% discount against SOL using a shared server snapshot every ten minutes. Blank token overrides restore automatic pricing; in fixed mode blank SKR prices disable SKR. Saving changes preserves prize/payout policies and does not execute a payment.
 - Match reviews: cursor-paged queue, saved replay access, evidence/reason, and explicit confirmation before an irreversible, audited accept/reject decision.
 
 ## Competition API
