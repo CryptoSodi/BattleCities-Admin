@@ -149,12 +149,14 @@
               <div class="admin-policy-grid">
                 <article class="admin-card">
                   <p class="admin-kicker">Season entry</p><h3>Season pass sales</h3>
-                  <p class="admin-help">A pass includes eligible matches from the start of that season and expires at its end. Enter both prices before enabling sales.</p>
+                    <p class="admin-help">A pass includes eligible matches from the start of that season and expires at its end. Set the SOL base price before enabling sales. With automatic token pricing enabled below, blank SKR and PLAY overrides use the shared market rates at 20% below SOL. In fixed mode, SKR is required and blank PLAY disables PLAY sales.</p>
                   <label class="admin-check"><input data-pass-enabled type="checkbox" /> Enable season pass sales</label>
                   <div class="admin-form__grid">
-                    <label>SKR price<input data-pass-skr type="text" inputmode="decimal" autocomplete="off" placeholder="Not set" maxlength="22" /></label>
-                    <label>SOL price<input data-pass-sol type="text" inputmode="decimal" autocomplete="off" placeholder="Not set" maxlength="22" /></label>
+                      <label>SOL base price<input data-pass-sol type="text" inputmode="decimal" autocomplete="off" placeholder="Not set" maxlength="22" /></label>
+                      <label><span data-pass-skr-label>SKR price</span><input data-pass-skr type="text" inputmode="decimal" autocomplete="off" placeholder="Not set" maxlength="22" /></label>
+                      <label><span data-pass-play-label>PLAY price</span><input data-pass-play type="text" inputmode="decimal" autocomplete="off" placeholder="Not set" maxlength="22" /></label>
                   </div>
+                    <p class="admin-help" data-pass-prices aria-live="polite"></p>
                 </article>
                 <article class="admin-card" data-prize-policy="cycle">
                   <p class="admin-kicker">30-minute cycle / ranks 1–10</p><h3>Cycle prizes</h3>

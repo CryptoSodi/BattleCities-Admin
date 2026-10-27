@@ -48,17 +48,17 @@ export function validateTiers(rows: DraftTier[], maxRank: number, decimals = 9):
 }
 
 export function settingsWithEdits(base: CompetitionSettings, edits: {
-  passEnabled: boolean; skrPrice: string; solPrice: string;
+  passEnabled: boolean; skrPrice: string; solPrice: string; playPrice?: string;
   cycleEnabled: boolean; cycle: DraftTier[]; seasonEnabled: boolean; season: DraftTier[];
   shop: Record<string, string>; sol?: Record<string, string>; play?: Record<string, string>; automaticTokens?: boolean;
 }, decimals = 9): CompetitionSettings {
   // PUT replaces the whole document. Keep policies not presented in this editor.
   const result: CompetitionSettings = JSON.parse(JSON.stringify(base));
-  result.seasonPass = { enabled: edits.passEnabled,
-    skrPrice: money(edits.skrPrice, decimals, true), solPrice: money(edits.solPrice, 9, true) };
   const autoTokens=edits.automaticTokens ?? base.tokenPricingMode==='sol-discounted';
+  result.seasonPass = { ...base.seasonPass, enabled: edits.passEnabled,
+    skrPrice: autoTokens ? base.seasonPass.skrPrice : money(edits.skrPrice, decimals, true), solPrice: money(edits.solPrice, 9, true) };
   if (edits.passEnabled && ((!autoTokens&&!result.seasonPass.skrPrice) || !result.seasonPass.solPrice)) {
-    throw new Error('Both SKR and SOL pass prices are required before enabling sales.');
+    throw new Error(autoTokens ? 'A SOL base price is required before enabling pass sales.' : 'SKR and SOL pass prices are required in fixed pricing mode.');
   }
   result.cycle = { enabled: edits.cycleEnabled, prizes: validateTiers(edits.cycle, 10, decimals) };
   result.season = { enabled: edits.seasonEnabled, prizes: validateTiers(edits.season, 100, decimals) };
@@ -78,6 +78,14 @@ export function settingsWithEdits(base: CompetitionSettings, edits: {
   for (const [id, value] of Object.entries(edits.sol || {})) result.shopSolPrices[id] = money(value, 9, true);
   for (const [id, value] of Object.entries(edits.play || {})) {
     if(value.trim()==='')delete result.shopPlayPrices[id];else result.shopPlayPrices[id]=money(value,6)!;
+  }
+  if (autoTokens) {
+    if (edits.skrPrice.trim() === '') delete result.shopSkrOverrides['season-pass'];
+    else result.shopSkrOverrides['season-pass'] = money(edits.skrPrice, decimals)!;
+  }
+  if (edits.playPrice !== undefined) {
+    if (edits.playPrice.trim() === '') delete result.shopPlayPrices['season-pass'];
+    else result.shopPlayPrices['season-pass'] = money(edits.playPrice, 6)!;
   }
   return result;
 }

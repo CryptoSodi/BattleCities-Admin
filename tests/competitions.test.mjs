@@ -80,6 +80,26 @@ test('SOL base and token overrides remain exact, clear back to automatic, and pr
   assert.throws(()=>model.settingsWithEdits(automatic,{...edits,sol:{shield:'0.0000000001'}},6));
   assert.throws(()=>model.settingsWithEdits(automatic,{...edits,play:{shield:'0.0000001'}},6));
 });
+test('season pass saves exact PLAY and SKR overrides and clears them back to SOL-derived pricing', () => {
+  const automatic = {...base, tokenPricingMode:'sol-discounted', shopSkrOverrides:{shield:'3'}, shopPlayPrices:{shield:'4'}, seasonPass:{enabled:false, skrPrice:'100', solPrice:null}};
+  const result = model.settingsWithEdits(automatic, {...edits,passEnabled:true,solPrice:'0.02',skrPrice:'42.123456',playPrice:'123.456789',automaticTokens:true},6);
+  assert.equal(result.shopPlayPrices['season-pass'],'123.456789');
+  assert.equal(result.shopSkrOverrides['season-pass'],'42.123456');
+  assert.equal(result.seasonPass.skrPrice,'100'); // Preserve the fixed-mode fallback.
+  assert.equal(result.seasonPass.solPrice,'0.02');
+  assert.equal(result.shopPlayPrices.shield,'4');
+  assert.deepEqual(result.tradingSeason,base.tradingSeason);
+  assert.equal(automatic.shopPlayPrices['season-pass'],undefined);
+  const cleared=model.settingsWithEdits(result,{...edits,passEnabled:true,solPrice:'0.02',skrPrice:'',playPrice:'',automaticTokens:true},6);
+  assert.equal(cleared.shopPlayPrices['season-pass'],undefined);
+  assert.equal(cleared.shopSkrOverrides['season-pass'],undefined);
+  const fixed=model.settingsWithEdits(result,{...edits,passEnabled:true,solPrice:'0.02',skrPrice:'80',playPrice:'125.5',automaticTokens:false},6);
+  assert.equal(fixed.seasonPass.skrPrice,'80');
+  assert.equal(fixed.shopPlayPrices['season-pass'],'125.5');
+  assert.throws(()=>model.settingsWithEdits(automatic,{...edits,playPrice:'0.0000001'},6));
+  assert.throws(()=>model.settingsWithEdits(automatic,{...edits,passEnabled:true,skrPrice:'',solPrice:'0.02',automaticTokens:false},6));
+});
+
 test('panel controls exist and settings/review actions require explicit confirmation', async () => {
   const html = await readFile('public/index.html','utf8');
   for (const file of ['src/admin/CompetitionPanel.ts','src/admin/ReviewPanel.ts']) {

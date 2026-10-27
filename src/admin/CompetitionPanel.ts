@@ -28,6 +28,8 @@ export class CompetitionPanel {
     element<HTMLInputElement>(root, '[data-token-pricing-auto]').addEventListener('change', () => {
       if(!this.base)return;
       const auto=element<HTMLInputElement>(root,'[data-token-pricing-auto]').checked;
+      element<HTMLInputElement>(root, '[data-pass-skr]').value = (auto ? this.base.shopSkrOverrides?.['season-pass'] : this.base.seasonPass.skrPrice) ?? '';
+      this.passLabels(auto);
       for(const input of root.querySelectorAll<HTMLInputElement>('[data-shop-price]')) {
         input.value=(auto?this.base.shopSkrOverrides:this.base.shopSkrPrices)?.[input.dataset.shopPrice!]??'';
         input.placeholder=auto?'Automatic':'Disabled';
@@ -54,8 +56,10 @@ export class CompetitionPanel {
         const precision = catalog.currency?.skr?.decimals ?? response.runtime?.skr?.decimals;
         if (Number.isInteger(precision) && precision >= 0 && precision <= 9) this.decimals = precision;
         items = Array.isArray(catalog.items) ? catalog.items : [];
+        this.passPrices(catalog.seasonPass?.prices);
         status(element(this.root, '[data-shop-status]'), catalog.currency?.skr ? `SKR precision: ${this.decimals} decimals. Prices are exact decimal strings.` : 'SKR configuration is not reported by the catalog. The API validates setup before enabling sales.');
       } catch (error) {
+        this.passPrices();
         status(element(this.root, '[data-shop-status]'), `Catalog unavailable: ${errorText(error)}. Stored prices remain editable; unlisted prices are preserved.`, true);
       }
       this.base = settings; this.render(settings, items); this.dirty = false;
@@ -74,8 +78,10 @@ export class CompetitionPanel {
     const automatic=value.tokenPricingMode==='sol-discounted';
     element<HTMLInputElement>(this.root,'[data-token-pricing-auto]').checked=automatic;
     element<HTMLInputElement>(this.root, '[data-pass-enabled]').checked = value.seasonPass.enabled;
-    element<HTMLInputElement>(this.root, '[data-pass-skr]').value = value.seasonPass.skrPrice ?? '';
+    element<HTMLInputElement>(this.root, '[data-pass-skr]').value = (automatic ? value.shopSkrOverrides?.['season-pass'] : value.seasonPass.skrPrice) ?? '';
     element<HTMLInputElement>(this.root, '[data-pass-sol]').value = value.seasonPass.solPrice ?? '';
+    element<HTMLInputElement>(this.root, '[data-pass-play]').value = value.shopPlayPrices?.['season-pass'] ?? '';
+    this.passLabels(automatic);
     for (const name of ['cycle', 'season'] as const) {
       const panel = element(this.root, `[data-prize-policy="${name}"]`);
       element<HTMLInputElement>(panel, '[data-policy-enabled]').checked = value[name].enabled;
@@ -86,6 +92,7 @@ export class CompetitionPanel {
       const grid = element(this.root, '[data-shop-prices]'); grid.replaceChildren();
       const ids = new Set([...items.map(item => String(item.id)), ...Object.keys(value.shopSkrPrices)]);
       for (const id of ids) {
+        if (id === 'season-pass') continue;
         const card=document.createElement('fieldset');card.className='admin-shop-price-item';const title=document.createElement('legend');title.textContent=id.replace(/-/g,' ');card.append(title);
         for(const [currency,data,prices] of [['SOL','shopSolPrice',value.shopSolPrices],['SKR','shopPrice',automatic?value.shopSkrOverrides:value.shopSkrPrices],['PLAY','shopPlayPrice',value.shopPlayPrices]] as const){
           const label=document.createElement('label');label.textContent=currency+(currency==='SOL'?' base':automatic?' override':'');
@@ -149,6 +156,18 @@ export class CompetitionPanel {
     }
     for (const blocker of Array.isArray(value.blockers) ? value.blockers : []) line(`Blocked: ${String(blocker)}`);
   }
+  private passLabels(automatic: boolean): void {
+    element(this.root, '[data-pass-skr-label]').textContent = automatic ? 'SKR price override' : 'SKR price';
+    element(this.root, '[data-pass-play-label]').textContent = automatic ? 'PLAY price override' : 'PLAY price';
+    for (const selector of ['[data-pass-skr]', '[data-pass-play]']) {
+      element<HTMLInputElement>(this.root, selector).placeholder = automatic ? 'Automatic from SOL' : 'Not set';
+    }
+  }
+  private passPrices(prices?: {sol?: string | null; skr?: string | null; play?: string | null}): void {
+    element(this.root, '[data-pass-prices]').textContent = prices
+      ? `Current server prices: ${prices.sol ?? 'Not set'} SOL · ${prices.skr ?? 'Unavailable'} SKR · ${prices.play ?? 'Unavailable'} PLAY`
+      : 'Current server prices are unavailable. Stored prices remain editable.';
+  }
   private async save(): Promise<void> {
     if (!this.base || this.busy) return;
     try {
@@ -159,6 +178,7 @@ export class CompetitionPanel {
         passEnabled: element<HTMLInputElement>(this.root, '[data-pass-enabled]').checked,
         skrPrice: element<HTMLInputElement>(this.root, '[data-pass-skr]').value,
         solPrice: element<HTMLInputElement>(this.root, '[data-pass-sol]').value,
+        playPrice: element<HTMLInputElement>(this.root, '[data-pass-play]').value,
         cycleEnabled: element<HTMLInputElement>(this.root, '[data-prize-policy="cycle"] [data-policy-enabled]').checked,
         seasonEnabled: element<HTMLInputElement>(this.root, '[data-prize-policy="season"] [data-policy-enabled]').checked,
         cycle: this.tiers('cycle'), season: this.tiers('season'), shop,sol,play,
@@ -172,7 +192,7 @@ export class CompetitionPanel {
       const response = await this.client.saveCompetitions(draft);
       this.base = this.settings(response.settings); this.dirty = false;
       let freshItems:any[]|undefined;
-      try {const catalog=await this.client.getEconomyCatalog();freshItems=Array.isArray(catalog.items)?catalog.items:undefined;}catch{/* Saving succeeded even if refreshing prices is unavailable. */}
+      try {const catalog=await this.client.getEconomyCatalog();freshItems=Array.isArray(catalog.items)?catalog.items:undefined;this.passPrices(catalog.seasonPass?.prices);}catch{this.passPrices();/* Saving succeeded even if refreshing prices is unavailable. */}
       this.render(this.base,freshItems);
       if (response.runtime) this.runtime(response.runtime);
       status(this.message, 'Settings saved. Worker and delivery switches were not changed.');
