@@ -555,7 +555,7 @@ function playerRow(player: any): HTMLTableRowElement {
   row.append(
     identity,
     tableCell(player.provider),
-    tableCell(`${formatNumber(player.tokenBalance)} BACT`, `${formatNumber(player.fuelBalance)} fuel · ${Number(player.solBalance).toLocaleString()} SOL`),
+    tableCell(`${formatNumber(player.tokenBalance)} BATC`, `${formatNumber(player.fuelBalance)} fuel · ${Number(player.solBalance).toLocaleString()} SOL`),
     tableCell(formatNumber(player.matchesPlayed), `${formatNumber(player.matchesCompleted)} accepted`),
     tableCell(formatNumber(player.bestScore)),
     xConnectionCell(player),
