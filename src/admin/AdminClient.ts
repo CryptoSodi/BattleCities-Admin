@@ -1,5 +1,21 @@
 import { apiFetchDirect } from '../network/api';
 
+export interface Referrer {
+  playerId: string;
+  displayName: string;
+  walletAddress: string | null;
+  rank: number;
+  referredCount: number;
+  rewards: Array<{ currency: string; network: string; amount: string }>;
+}
+
+interface ReferralPage {
+  items: Referrer[];
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+}
+
 export class AdminRequestError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);
@@ -58,6 +74,11 @@ export class AdminClient {
 
   getReplays(offset = 0): Promise<any> {
     return this.request(`/api/admin/replays?limit=100&offset=${offset}`);
+  }
+
+  getReferrals(offset = 0): Promise<ReferralPage> {
+    const search = new URLSearchParams({ limit: '50', offset: String(offset) });
+    return this.request(`/api/admin/referrals?${search}`);
   }
 
   getReplay(id: string): Promise<any> {

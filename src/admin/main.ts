@@ -2,15 +2,18 @@
 
 import { getPhantomProvider } from '../wallet/PhantomProvider';
 import { GAME_ORIGIN } from '../network/api';
-import { AdminClient, AdminRequestError } from './AdminClient';
+import { AdminClient, AdminRequestError, type Referrer } from './AdminClient';
 import { CompetitionPanel } from './CompetitionPanel';
 import { ReviewPanel } from './ReviewPanel';
+import { errorText, status } from './panelElements';
 
 const client = new AdminClient();
 let competitionPanel: CompetitionPanel;
 let reviewPanel: ReviewPanel;
 let matchOffset = 0;
 let playerOffset = 0;
+let referralOffset = 0;
+let referralPageSize = 50;
 let xOffset = 0;
 
 void initialize();
@@ -70,6 +73,8 @@ function bindEvents(): void {
   document.querySelectorAll<HTMLButtonElement>('[data-admin-refresh]').forEach((button) => {
     button.addEventListener('click', () => void loadSection(button.dataset.adminRefresh || 'overview'));
   });
+  requireElement('[data-referral-prev]').addEventListener('click', () => void loadReferrals(referralOffset - referralPageSize));
+  requireElement('[data-referral-next]').addEventListener('click', () => void loadReferrals(referralOffset + referralPageSize));
   requireElement<HTMLSelectElement>('[data-match-status]').addEventListener('change', () => void loadMatches());
   requireElement<HTMLFormElement>('[data-player-search]').addEventListener('submit', (event) => {
     event.preventDefault();
@@ -126,11 +131,65 @@ async function loadSection(name: string): Promise<void> {
   if (name === 'matches') await loadMatches();
   else if (name === 'replays') await loadReplays();
   else if (name === 'players') await loadPlayers();
+  else if (name === 'referrals') await loadReferrals();
   else if (name === 'notifications') await loadNotifications();
   else if (name === 'x') await loadX();
   else if (name === 'competitions') await competitionPanel.load();
   else if (name === 'reviews') await reviewPanel.load();
   else await loadOverview();
+}
+
+async function loadReferrals(offset = referralOffset): Promise<void> {
+  const refresh = requireElement<HTMLButtonElement>('[data-admin-refresh="referrals"]');
+  if (refresh.disabled) return;
+  const prev = requireElement<HTMLButtonElement>('[data-referral-prev]');
+  const next = requireElement<HTMLButtonElement>('[data-referral-next]');
+  const controls = requireElement('[data-referral-pagination]');
+  const reportStatus = requireElement('[data-referral-status]');
+  const savedButtons = [prev.disabled, next.disabled];
+  refresh.disabled = prev.disabled = next.disabled = true;
+  status(reportStatus, 'Loading referrals…');
+  reportStatus.hidden = false;
+  try {
+    const result = await client.getReferrals(offset);
+    referralOffset = result.offset;
+    referralPageSize = result.limit;
+    const rows = requireElement('[data-referral-rows]');
+    rows.replaceChildren(...result.items.map(referralRow));
+    if (result.items.length === 0) rows.append(emptyRow(4, 'No referrals recorded on this page.'));
+    const first = result.offset + 1;
+    const last = result.offset + result.items.length;
+    setText('[data-referral-range]', result.items.length > 0 ? `${formatNumber(first)}–${formatNumber(last)}` : '0 results');
+    prev.disabled = result.offset === 0;
+    next.disabled = !result.hasMore;
+    controls.hidden = prev.disabled && next.disabled;
+    reportStatus.hidden = true;
+  } catch (error) {
+    [prev.disabled, next.disabled] = savedButtons;
+    status(reportStatus, errorText(error), true);
+  } finally {
+    refresh.disabled = false;
+  }
+}
+
+function referralRow(player: Referrer): HTMLTableRowElement {
+  const row = document.createElement('tr');
+  const earnings = document.createElement('td');
+  if (player.rewards.length === 0) earnings.textContent = '0';
+  for (const reward of player.rewards) {
+    const line = document.createElement('div');
+    const currency = reward.currency === 'token' ? 'BATC' : reward.currency.toUpperCase();
+    const network = ['mainnet', 'mainnet-beta'].includes(reward.network) ? '' : ` (${reward.network})`;
+    line.textContent = `${reward.amount} ${currency}${network}`;
+    earnings.append(line);
+  }
+  row.append(
+    tableCell(formatNumber(player.rank)),
+    tableCell(player.displayName, player.walletAddress || player.playerId),
+    tableCell(formatNumber(player.referredCount)),
+    earnings,
+  );
+  return row;
 }
 
 async function loadNotifications(): Promise<void> {
