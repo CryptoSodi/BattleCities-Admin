@@ -2,10 +2,11 @@
 
 import { getPhantomProvider } from '../wallet/PhantomProvider';
 import { GAME_ORIGIN } from '../network/api';
-import { AdminClient, AdminRequestError, type Referrer } from './AdminClient';
+import { AdminClient, AdminRequestError, type Referrer, type PendingPurchase } from './AdminClient';
 import { CompetitionPanel } from './CompetitionPanel';
 import { ReviewPanel } from './ReviewPanel';
 import { errorText, status } from './panelElements';
+import { formatPurchaseAmount } from './purchaseModel';
 
 const client = new AdminClient();
 let competitionPanel: CompetitionPanel;
@@ -14,6 +15,8 @@ let matchOffset = 0;
 let playerOffset = 0;
 let referralOffset = 0;
 let referralPageSize = 50;
+let purchaseOffset = 0;
+let purchasePageSize = 50;
 let xOffset = 0;
 
 void initialize();
@@ -75,6 +78,8 @@ function bindEvents(): void {
   });
   requireElement('[data-referral-prev]').addEventListener('click', () => void loadReferrals(referralOffset - referralPageSize));
   requireElement('[data-referral-next]').addEventListener('click', () => void loadReferrals(referralOffset + referralPageSize));
+  requireElement('[data-purchase-prev]').addEventListener('click', () => void loadPendingPurchases(purchaseOffset - purchasePageSize));
+  requireElement('[data-purchase-next]').addEventListener('click', () => void loadPendingPurchases(purchaseOffset + purchasePageSize));
   requireElement<HTMLSelectElement>('[data-match-status]').addEventListener('change', () => void loadMatches());
   requireElement<HTMLFormElement>('[data-player-search]').addEventListener('submit', (event) => {
     event.preventDefault();
@@ -132,11 +137,46 @@ async function loadSection(name: string): Promise<void> {
   else if (name === 'replays') await loadReplays();
   else if (name === 'players') await loadPlayers();
   else if (name === 'referrals') await loadReferrals();
+  else if (name === 'purchases') await loadPendingPurchases();
   else if (name === 'notifications') await loadNotifications();
   else if (name === 'x') await loadX();
   else if (name === 'competitions') await competitionPanel.load();
   else if (name === 'reviews') await reviewPanel.load();
   else await loadOverview();
+}
+
+async function loadPendingPurchases(offset = purchaseOffset): Promise<void> {
+  const refresh = requireElement<HTMLButtonElement>('[data-admin-refresh="purchases"]');
+  if (refresh.disabled) return;
+  const prev = requireElement<HTMLButtonElement>('[data-purchase-prev]');
+  const next = requireElement<HTMLButtonElement>('[data-purchase-next]');
+  const controls = requireElement('[data-purchase-pagination]');
+  const report = requireElement('[data-purchase-status]');
+  const previous = [prev.disabled, next.disabled];
+  refresh.disabled = prev.disabled = next.disabled = true;
+  status(report, 'Loading pending purchases…'); report.hidden = false;
+  try {
+    const result = await client.getPendingPurchases(offset);
+    purchaseOffset = result.offset; purchasePageSize = result.limit;
+    const rows = requireElement('[data-purchase-rows]');
+    rows.replaceChildren(...result.items.map(purchaseRow));
+    if (!result.items.length) rows.append(emptyRow(7, 'No pending purchases.'));
+    setText('[data-purchase-range]', result.items.length ? `${formatNumber(result.offset + 1)}–${formatNumber(result.offset + result.items.length)}` : '0 results');
+    prev.disabled = result.offset === 0; next.disabled = !result.hasMore;
+    controls.hidden = prev.disabled && next.disabled; report.hidden = true;
+  } catch (error) {
+    [prev.disabled, next.disabled] = previous; status(report, errorText(error), true);
+  } finally { refresh.disabled = false; }
+}
+function purchaseRow(purchase: PendingPurchase): HTMLTableRowElement {
+  const row = document.createElement('tr');
+  const amount = formatPurchaseAmount(purchase.amountAtomic, Number(purchase.decimals));
+  const currency = purchase.currency === 'token' ? 'BATC' : purchase.currency.toUpperCase();
+  row.append(tableCell(purchase.displayName || purchase.playerId, purchase.walletAddress),
+    tableCell(purchase.itemId, purchase.quoteId), tableCell(`${amount} ${currency}`, purchase.network),
+    tableCell(formatDateTime(purchase.createdAt)), tableCell(formatDateTime(purchase.lastCheckedAt)),
+    tableCell(formatNumber(purchase.checkCount)), tableCell(purchase.signature || 'Not returned by wallet'));
+  return row;
 }
 
 async function loadReferrals(offset = referralOffset): Promise<void> {

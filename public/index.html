@@ -10,8 +10,8 @@
     <meta name="referrer" content="no-referrer" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src https://api.battlecities.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data:; object-src 'none'; base-uri 'self'; form-action 'self' https://api.battlecities.com" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Press+Start+2P&family=Share+Tech+Mono&display=swap" />
-    <link rel="stylesheet" href="/admin/admin.css?v=0.3.2" />
-    <script defer src="/admin.js?v=0.3.2"></script>
+    <link rel="stylesheet" href="/admin/admin.css?v=0.3.3" />
+    <script defer src="/admin.js?v=0.3.3"></script>
   </head>
   <body class="admin-body">
     <main class="admin-shell">
@@ -56,6 +56,7 @@
           <button class="admin-tab" data-admin-tab="replays" type="button">Replays</button>
           <button class="admin-tab" data-admin-tab="players" type="button">Players</button>
           <button class="admin-tab" data-admin-tab="referrals" type="button">Referrals</button>
+          <button class="admin-tab" data-admin-tab="purchases" type="button">Pending purchases</button>
           <button class="admin-tab" data-admin-tab="notifications" type="button">Notifications</button>
           <button class="admin-tab" data-admin-tab="x" type="button">X</button>
           <button class="admin-tab" data-admin-tab="competitions" type="button">Competitions</button>
@@ -113,6 +114,24 @@
             <button class="admin-button admin-button--secondary" data-referral-prev type="button" disabled>Previous</button>
             <span data-referral-range aria-live="polite"></span>
             <button class="admin-button admin-button--secondary" data-referral-next type="button" disabled>Next</button>
+          </div>
+        </section>
+
+        <section class="admin-section" data-admin-section="purchases" hidden>
+          <div class="admin-section__title">
+            <div><p class="admin-kicker">Shop recovery</p><h2>Pending purchases</h2></div>
+            <button class="admin-button admin-button--secondary" data-admin-refresh="purchases" type="button">Refresh</button>
+          </div>
+          <p>These attempts are not yet verified. Some may have been cancelled before payment.</p>
+          <p class="admin-panel-status" data-purchase-status role="status" hidden></p>
+          <div class="admin-table-wrap"><table>
+            <thead><tr><th scope="col">Player / wallet</th><th scope="col">Item</th><th scope="col">Quoted amount</th><th scope="col">Created</th><th scope="col">Last checked</th><th scope="col">Checks</th><th scope="col">Transaction</th></tr></thead>
+            <tbody data-purchase-rows></tbody>
+          </table></div>
+          <div class="admin-pagination" data-purchase-pagination hidden>
+            <button class="admin-button admin-button--secondary" data-purchase-prev type="button" disabled>Previous</button>
+            <span data-purchase-range aria-live="polite"></span>
+            <button class="admin-button admin-button--secondary" data-purchase-next type="button" disabled>Next</button>
           </div>
         </section>
 

@@ -16,6 +16,13 @@ interface ReferralPage {
   hasMore: boolean;
 }
 
+export interface PendingPurchase {
+  quoteId: string; playerId: string; displayName: string | null; walletAddress: string;
+  itemId: string; currency: string; amountAtomic: string; decimals: number; network: string;
+  signature: string | null; createdAt: string; lastCheckedAt: string | null; checkCount: number;
+}
+interface PurchasePage { items: PendingPurchase[]; limit: number; offset: number; hasMore: boolean; }
+
 export class AdminRequestError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);
@@ -79,6 +86,11 @@ export class AdminClient {
   getReferrals(offset = 0): Promise<ReferralPage> {
     const search = new URLSearchParams({ limit: '50', offset: String(offset) });
     return this.request(`/api/admin/referrals?${search}`);
+  }
+
+  getPendingPurchases(offset = 0): Promise<PurchasePage> {
+    const search = new URLSearchParams({ limit: '50', offset: String(offset) });
+    return this.request(`/api/admin/pending-purchases?${search}`);
   }
 
   getReplay(id: string): Promise<any> {
